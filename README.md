@@ -256,3 +256,279 @@ Kullanımı bu şekildedir. Yine diğer dillerde olduğu gibi `default` aranan k
 Anlatım bu kadardır.
 
 **Yazı Kaynağı:** [http://aligoren.github.io/posts/merhaba-go.html](http://aligoren.github.io/posts/merhaba-go.html)
+
+Go dilinde 3 basit tip vardır. Bu yazıda bu üç built-in tipten bahsedeceğim. Bu tipler: arrays, slices ve maps'dir.
+
+Diğer dillerde olan map, array ve slices kavramı bu dilde de var. Tanımlanışları ve kullanışları itibariyle farklılıklar gösterseler de çalışma mantıkları aynı.
+
+#Arrays
+
+Örneğin go dilinde bir array şöyle tanımlanmakta ve şöyle değer ataması yapılmaktadır:
+
+~~~~{.go}
+var x [5]int
+
+x[4] = 10
+~~~~
+
+Tanımlama işlemi yaparken yine **var** anahtar kelimesini kullanım dizi değişkeninin adını yazıp dizi boyutunu ve türünü belirtmemiz gerekiyor. Nasıl derlenir, ne yapılır işine girmiyorum daha önce [bahsetmiştim](http://aligoren.github.io/posts/merhaba-go.html).
+
+Yukarıdaki kodda `[5]int` aslında `0,1,2,3,4` demektir. Yani dizilere aşinalığınız varsa dizilerin ilk değerinin sıfır olduğunu biliyorsunuz demektir.
+
+Ayrıca bir önceki yazımda bahsettiğim işlev değişkenleri mantığını burada da uygulayabiliriz. Dizileri farklı olarak şöyle de tanımlayabiliriz:
+
+~~~~{.go}
+x := [5]float64{10, 15, 22, 35, 56}
+~~~~
+
+şeklinde tanımlayabildiğimiz gibi yukarıdaki tanımlamayı şöyle de yapabiliriz:
+
+~~~~{.go}
+x := [5]float64{
+    10,
+    15,
+    22,
+    35,
+    56,
+}
+~~~~
+
+Dizileri iterasyona uğratma işlemini şöyle yapıyoruz. Yukarıdaki dizimiz üzerinden bir örnek geliştirelim:
+
+~~~~{.go}
+var total float64 = 0
+
+for i := 0; i < 5; i++ {
+    total += x[i]
+}
+
+fmt.Println(total / 5)
+~~~~
+
+Yukarıda dizi boyutunu kendimiz manuel olarak belirledik. Yani `total / 5` işlemindeki 5 bizim dizi boyutumuzdu. Bunu biraz daha otomatik hale getirelim:
+
+~~~~{.go}
+for i := 0; i < len(x); i++ {
+    total += x[i]
+}
+
+fmt.Println(total / len(x))
+~~~~
+
+Yukarıdaki kod bir üstteki kodun aynısı, çalışma şekli ve getireceği sonuçlar aynı. Ancak çalıştırıp denediğimizde `invalid operation: total / 5 (mismatched types float64 and int)` hatasını alırız. Bu hata dönüşüm hatasıdır. Bu hatadan kurtulmak için float64 dönüşümü yapalım. Unutmadan float64 dönüşümü her zaman olmamalıdır tiplerin kendilerine göre dönüşümleri vardır. Artık fixlenmiş hali şöyledir:
+
+~~~~{.go}
+fmt.Println(total / float64(len(x)))
+~~~~
+
+Artık bu kod çalışır hale geldi. Ayrıca dizileri C# ve diğer bazı dillerde olan **foreach** mantığı ile kullanabiliriz. Bunu şöyle yaparız:
+
+~~~~{.go}
+for i, val := range x {
+    total += val
+}
+~~~~
+
+Ancak bu kod için bir hata var. Söyledim mi bilmiyorum ancak go dilinde tanımlanan bir değişken, çağırılan bir kütüphane kullanılmazsa derleme hatası verir. Yukarıdaki kod için söyleyecek olursak **i** değişkeni kullanılmamaktadır. Bunu `i declared and not used` hatasından anlayabiliriz. Bu durumdan kurtulmak için yukarıdaki kodu şu şekilde değiştirelim:
+
+~~~~{.go}
+for _, val := range x {
+    total += val
+}
+~~~~
+
+Yukarıdaki kodu inceleyelim. Yukarıdaki kod **i** değişkenini kaybetmiş ve onun yerine **_** yani underscore(alt çizgi) almıştır. Peki neden alt çizgi kullanırız?
+
+Alt çizgi, derleyiciye **bu değere ihtiyacım yok ama dilin işleyişi açısından da gerekli** mesajını iletir. Bu değişken aslında bir yineleyicidir. Kullanılmayacak değişkenleri underscore(alt çizgi) ile belirtebiliriz tabii bu değişkenler aslında ihtiyaç olmayan ama orada bulunması gereken değişkenlerdir. Bunu unutmadan ihtiyaca göre kullanmamız gerektiğini bilelim.
+
+#Slices
+
+Slices yani dilimler dizilerin birer parçasıdır. Dilimlerin kullanılışı da diziler gibidir. Belirli uzunlukları vardır. Dizilerin aksine dilimlerde uzunluklar değiştirilebilirler.
+
+Bir dilim şöyle tanımlanabilir:
+
+`var x []float64`
+
+Burada boyutu sıfır olan bir dilim tanımlaması yaptık. Eğer kullanılması gereken bir dilim oluşturmak istiyorsak `make` built-in fonksiyonunu kullanarak bunu yapabiliriz:
+
+~~~~{.go}
+x := make([]float64, 5)
+~~~~
+
+Burada uzunluğu 5 olan bir array ile ilişkilendirilmiş float64 tipinde bir dilim oluştururuz.
+
+Dilimler diziler ile ilişkili demiştim örneğin uzunluğu 5 olan bir dilim daha küçük de olabilir değiştirilebilirlikleri vardır. Ayrıca `make` fonksiyonu dilimin kapasitesini belirten üçüncü bir değer de alabilir.
+
+~~~~{.go}
+x := make([]float64, 5, 10) // benim kapasitem 10
+~~~~
+
+Bir diziyi şöyle tanımlayabiliriz demiştik:
+
+~~~~{.go}
+arr := [5]float64{1,2,3,4,5}
+~~~~
+
+Bu dizileri ayrıca `[low:high]` ifadesi ile kullanabiliriz. Bunu şöyle yaparız:
+
+~~~~{.go}
+x := arr[0:5]
+
+fmt.Println(x) // [1 2 3 4 5]
+~~~~
+
+Aslında kendisi burada bir iterasyon işlemi yapmış oluyor.
+
+#Slices Functions
+
+Dilimlerin bazı özel fonksiyonları da vardır. Bunlardan birisi yine diğer dillerden biliyorsanız eğer `append` fonksiyonudur. Bu fonksiyonla dizilere ekleme yapabiliriz. Bir örnekle anlamaya çalışalım:
+
+~~~~{.go}
+sl1 := []int{1,2,3}
+sl2 := append(sl1, 4,5)
+~~~~
+
+Yukarıdaki örnek kodda **sl1** dilimi `1,2,3` değerlerini almıştır. Daha sonra bu dilimlere ekleme yapmak istersek yukarıdaki `append(sl1, 4,5)` fonksiyonunu kullanmalıyız. Bu fonksiyonun ilk değeri var olan bir diziyi temsil eder. İkincil ve sonraki gelen değerler ise soldaki yani var olan diziye eklenecek değerleri temsil eder. Dizilerde ayrıca kopyalama işlemi de yapabiliriz.
+
+Örnekle açıklamak gerekirse şöyle yapalım:
+
+~~~~{.go}
+sl1 := []int{1,2,3}
+sl2 := make([]int, 2)
+
+copy(sl2, sl1)
+
+fmt.Println(sl2, sl1) // [1 2] [1 2 3]
+~~~~
+
+Yukarıdaki kodun ilk 2 satırını bildiğimizi varsayarak diğer satırdan yani `copy()` işlevinin olduğu satırdan bahsedelim.
+
+Bu işlev iki değeri alır. İlk değer içerisine değer kopyalanacak olan değerdir. İkinci değer ise ilgili verinin adresini belirtir. Yukarıdaki örnekte **sl2** dilimi **sl1** diliminin ilk 2 değerini almıştır. Çünkü boyutu 2 olarak belirlendi. Yani sl1'in ilk 2 değerini kopyalamış olduk.
+
+#Maps
+
+Haritalar key-value çiftin, unordered collection yani sırasız bir koleksiyonudur. Bu Türkçe format için özür dilerim. key-valu ve unordered collection için aklıma uygun bir şey gelmedi. Haritaların basit şekilde tanımlanışı şöyledir:
+
+~~~~{.go}
+var x map[string]int
+~~~~
+
+İlk defa bu makalede gördüğümüz `map` keywordünü kullandığımızı fark etmişsinizdir. Tanımlanışları olarak ise **map[ANAHTAR_TIPI]DEGER_TURU**
+şeklinde tanımlanırlar.
+
+Hadi daha somut bir örnek kullanarak bunu açıklayalım:
+
+~~~~{.go}
+var x map[string]int
+
+x["key"] = 10
+
+fmt.Println(x)
+~~~~
+
+Yukarıdaki kod anahtar tipi `"key"` ve değer türü int olan bir map'i göstermektedir. Yine o kodda `fmt.Println` ile o değeri yazdırmaya çalışıyoruz. Ancak bu şekilde kullanımda `panic: runtime error: assignment to entry in nil map` hatasını alırız. Bu hata harita için bir atama olması gerektiğini belirtir. Bunu şöyle düzeltelim:
+
+~~~~{.go}
+fmt.Println(x["key"])
+~~~~
+
+Buradan da anlayacağımız gibi `x["key"], x["val"], x["falan"]` gibi farklı atamalar yapabiliriz. Bu atamaları çağırırken anahtar değerleri ile birlikte çağırmamız gerekiyor. Bir harita içerisindeki anahtar değer ve içeriğini `delete()` işlevi ile sileriz.
+
+Haritaların kullanımıyla ilgili şu küçük uygulamayı örnek alabiliriz:
+
+~~~~{.go}
+package main
+
+import "fmt"
+
+func main() {
+    lang := make(map[string]string)
+
+    lang["PHP"] = "PHP: Hypertext Preprocessor"
+    lang["HTML"] = "HyperText Markup Language"
+    lang["ASP"] = "Active Server Pages"
+    lang["JS"] = "Javascript"
+    lang["CPP"] = "C++: C plus plus"
+
+    fmt.Println(lang["PHP"])
+}
+~~~~
+
+Bu programı geliştirip çalıştırın ve ne sonuç verdiğini görün. Yukarıdaki programın map bölümünü baştan şöle kodlayabiliriz:
+
+~~~~{.go}
+lang := map[string]string {
+    "PHP": "PHP: Hypertext Preprocessor",
+    "HTML": "HyperText Markup Language",
+    "ASP": "Active Server Pages",
+    "JS": "Javascript"
+    "CPP": "C++: C plus plus",
+}
+~~~~
+
+Bu kodun yukarıdaki koddan bir farkı yoktur. Yukarıdaki kodda `make` gömülü fonksiyonunu kullandık sadece. Son olarak haritalarla ilgili şu örneği vermek istiyorum.
+
+Elementler ve bu elementlerin hallerini gösteren bir uygulama olduğunu varsayalım:
+
+~~~~{.go}
+elements := map[string]map[string]string{
+        "H": map[string]string{
+            "name":"Hydrogen", 
+            "state":"gas",
+        },
+        "He": map[string]string{
+            "name":"Helium", 
+            "state":"gas",
+        },
+        "Li": map[string]string{
+            "name":"Lithium", 
+            "state":"solid",
+        },
+        "Be": map[string]string{
+            "name":"Beryllium", 
+            "state":"solid",
+        },
+        "B":  map[string]string{
+            "name":"Boron",
+            "state":"solid",
+        },
+        "C":  map[string]string{
+            "name":"Carbon",
+            "state":"solid",
+        },
+        "N":  map[string]string{
+            "name":"Nitrogen",
+            "state":"gas",
+        },
+        "O":  map[string]string{
+            "name":"Oxygen",
+            "state":"gas",
+        },
+        "F":  map[string]string{
+            "name":"Fluorine",
+            "state":"gas",
+        },
+        "Ne":  map[string]string{
+            "name":"Neon",
+            "state":"gas",
+        },
+    }
+~~~~
+
+Haritalar da genellikle bilgi depolamak için kullanılırlar. Bunu biliyoruz. Yukarıdaki örnekte elementleri ve bu elementlerin hallerini sakladığımızı görmekteyiz. Haritanın gösterim şeklinin `map[string]string` olmadığını artık yeni halinin `map[string]map[string]string` olduğunu görmekteyiz.
+
+Bu kullanım bize haritalar içinde de haritalar olabileceğini göstermektedir. Yukarıdaki haritaya bakarak Helium'un **state** değerini yani hal değerini yazdıralım:
+
+~~~~{.go}
+fmt.Println(elements["He"]["state"]) // gas
+~~~~
+
+Eğer tür belirtmeden bir state değeri yazdırmak isteseydik
+
+~~~~{.go}
+fmt.Println(elements["name"]["gas"]) // nil
+~~~~
+
+Bize nil bir değer döndürecekti.
+
+Sanırım bu yazının sonuna gelmiş bulunmaktayız. İyi çalışmalar.
